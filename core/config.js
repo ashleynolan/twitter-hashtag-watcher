@@ -7,56 +7,46 @@ var path = require('path'),
 var sharedConfig = {
 	root: rootPath,
 	db : {
-		path: {}
+		path: 'mongodb://localhost/realtime-worldcup'
 	}
 };
 
-config = {
+module.exports = {
 	local: {
-		mode:	'local',
-		port:	3001,
+		mode: 'local',
+		port: 3002,
 		app: {
-			name: 'Node Basic Setup - Local'
+			name: 'Twitter vote counter - local'
 		},
-		url:	'',
-		global:	sharedConfig
+		twitter: require('./privconfig-twitter')['local'],
+		global: sharedConfig
 	},
 
-	development: {
-		mode:	'dev',
-		port:	3001,
+	dev: {
+		mode: 'development',
+		port: 3002,
 		app: {
-			name: 'Node Basic Setup - Dev'
+			name: 'Twitter vote counter - Dev'
 		},
-		global:	sharedConfig
+		twitter: require('./privconfig-twitter')['dev'],
+		global: sharedConfig
 	},
 
-	staging: {
-		mode:	'staging',
-		port:	3001,
+	prod: {
+		mode: 'production',
+		port: 3002,
 		app: {
-			name: 'Node Basic Setup - Staging'
+			name: 'Twitter vote counter - Prod'
 		},
-		global:	sharedConfig
-	},
+		twitter: require('./privconfig-twitter')['prod'],
+		global: sharedConfig
 
-	production: {
-		mode:	'prod',
-		port:	3001,
-		app: {
-			name: 'Node Basic Setup - Production'
-		},
-		global:	sharedConfig
 	},
 
 	hosts: [
 		{
-			domain: 'basic-setup.local',
+			domain: 'twitterpoll.local',
 			target: ['localhost:3001']
 		}
 	]
 };
-
-
-// Export config
-module.exports = config;
