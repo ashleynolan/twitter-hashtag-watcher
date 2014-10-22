@@ -1,0 +1,23 @@
+.page-footer {
+	position: fixed;
+	width: 100%;
+	padding: 10px 10%;
+	background: #2c3e50;
+	bottom: 0;
+	left: 0;
+}
+	.page-footer-links {
+		> li {
+			display: inline-block;
+
+			&:first-child a {
+				border-left: none;
+				padding-left: 0;
+			}
+		}
+		a {
+			color: #fff;
+			border-left: 1px solid #fff;
+			padding: 0 10px;
+		}
+	}

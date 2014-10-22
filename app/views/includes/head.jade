@@ -1,0 +1,24 @@
+head
+	meta(charset="utf-8")
+	meta(http-equiv="X-UA-Compatible", content="IE=edge,chrome=1")
+	title= pkg.title + ' - ' + title
+	meta(name="description", content=pkg.description)
+
+	meta(http-equiv="Content-type", content="text/html;charset=UTF-8")
+	meta(name="viewport", content="width=device-width, initial-scale=1.0")
+
+	<meta property="og:title" content="#{pkg.title} - #{title}">
+	<meta property="og:description" content="#{pkg.description}">
+	<meta property="og:site_name" content="#{pkg.title}">
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="#{pkg.url}">
+	<meta property="og:locale" content="en_GB">
+
+	//mobile and favicons
+	link(href="/favicon.ico", rel="shortcut icon", type="image/x-icon")
+
+	// Application styles
+	link(rel='stylesheet', href='/css/kickoff.css')
+
+	// Modernizr
+	script(src="/js/libs/modernizr-build.min.js", async)
