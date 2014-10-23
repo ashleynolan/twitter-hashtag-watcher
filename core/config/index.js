@@ -7,7 +7,7 @@ var path = require('path'),
 var sharedConfig = {
 	root: rootPath,
 	db : {
-		path: 'mongodb://localhost/realtime-worldcup'
+		path: 'mongodb://localhost/hashtag-watcher'
 	}
 };
 

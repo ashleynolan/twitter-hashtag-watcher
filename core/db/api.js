@@ -1,16 +1,19 @@
 
 
-var mongoose = require('mongoose')
-	, Promise = require('es6-promise').Promise
+var mongoose = require('mongoose'),
+	Promise = require('es6-promise').Promise,
 
-	, symbol = require('../../app/controllers/symbolController')
-	, state = require('../../app/controllers/stateController')
+	symbol = require('../../app/controllers/symbolController'),
+	state = require('../../app/controllers/stateController'),
 
-	, Symbol = mongoose.model('Symbol')
-	, State = mongoose.model('State')
-	, utils = require('../../lib/utils')
-	, _ = require('underscore')
-	, _this = this;
+	Symbol = mongoose.model('Symbol'),
+	State = mongoose.model('State'),
+	utils = require('../../lib/utils'),
+	_ = require('underscore'),
+
+	_this = this;
+
+
 
 //returns a promise which resolves when the JSON is recieved by the function
 exports.getJSON = function (url) {
@@ -24,7 +27,7 @@ exports.createSymbols = function(twitter) {
 
 	return new Promise(function (resolve, reject) {
 
-		_this.getJSON('../../core/tracker').then(function (response) {
+		_this.getJSON('../../core/tagDefinition').then(function (response) {
 
 			//create an array of promises for our symbols
 			var symbolPromises = [];
@@ -43,7 +46,7 @@ exports.createSymbols = function(twitter) {
 		})
 		.then(function () {
 			resolve();
-		})
+		});
 
 	});
 
@@ -127,5 +130,5 @@ exports.checkHashtagState = function (hashtag) {
 
 	});
 
-}
+};
 

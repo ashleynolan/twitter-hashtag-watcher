@@ -7,7 +7,7 @@ var mongoose = require('mongoose')
 	, Promise = require('es6-promise').Promise
 
 	, State = mongoose.model('State')
-	, utils = require('../../lib/utils')
+	, utils = require('lib/utils')
 	, _ = require('underscore')
 	, _this = this;
 

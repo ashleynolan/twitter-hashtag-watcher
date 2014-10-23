@@ -1,0 +1,20 @@
+{
+	"christmas" : {
+		"tags" : ["christmas, xmas"]
+	},
+	"santa" : {
+		"tags" : ["santa"]
+	},
+	"crackers" : {
+		"tags" : ["crackers"]
+	},
+	"snowman" : {
+		"tags" : ["snowman"]
+	},
+	"present" : {
+		"tags" : ["present", "gift"]
+	},
+	"tree" : {
+		"tags" : ["tree"]
+	}
+}

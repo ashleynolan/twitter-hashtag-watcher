@@ -127,7 +127,7 @@ exports.display = function(req, res) {
 			state.stateArrayToObject(symbolArray, function (symbolObject) {
 
 				res.render('layouts/home', {
-				title: 'Realtime World Cup',
+				title: 'Tag Watcher',
 				symbolsJSON: symbols
 			});
 

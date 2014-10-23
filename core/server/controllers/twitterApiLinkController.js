@@ -4,91 +4,53 @@
  * and handles the db connection
  */
 
-var express = require('express')
-	, io = require('socket.io') //socket.io - used for our websocket connection
-	, client = require('socket.io-client')
-	, mongoose = require('mongoose')
-	, twitter = require('twitter') //ntwitter - allows easy JS access to twitter API's - https://github.com/AvianFlu/ntwitter
-	, _ = require('underscore')
+var mongoose = require('mongoose'),
+	twitter = require('twitter'), //ntwitter - allows easy JS access to twitter API's - https://github.com/AvianFlu/ntwitter
+	_ = require('underscore'),
 
-	, Symbol = mongoose.model('Symbol')
-	, State = mongoose.model('State')
-	, state = require('../app/controllers/stateController')
-	// , page = require('../app/controllers/pageController')
-	, pkg = require('../package.json');
+	SocketServer = null,
+	Symbol = mongoose.model('Symbol'),
+	State = mongoose.model('State'),
+	state = require('./stateController'),
+
+	pkg = require('package.json'),
+
+	FAKE_TWITTER_CONNECTION = false,
+	SERVER_BACKOFF_TIME = 30000,
+
+	_this = this;
 
 
+var TwitterController = {
 
+	twitterStreamingApi : null,
 
-module.exports = function (app, server, config) {
-
-	//Start a Socket.IO listen
-	var socketServer = io.listen(server);
-	socketServer.set('log level', 1); //don't log all emits etc
-
-	// Setup the socket.io client against our proxy
-	//var ws = client.connect('ws://localhost:3001');
-
-	// ws.on('message', function (msg) {
-	// 	console.log(msg, 'HELLLLLLLO')
-	// });
-
-	//  ==================
-	//  === ON CONNECT ===
-	//  ==================
-
-	//If a client connects, give them the current data that the server has tracked
-	//so here that would be how many tweets of each type we have stored
-	socketServer.sockets.on('connection', function(socket) {
-		console.log('twitter.js: New connection logged');
-		socket.emit('data', globalState.currentGlobalState);
-	});
-
-	//  ============================
-	//  === SERVER ERROR LOGGING ===
-	//  ============================
-
-	socketServer.sockets.on('close', function(socket) {
-		console.log('twitter.js: socketServer has closed');
-	});
-
-	//  ====================================
-	//  === TWITTER CONNECTION TO STREAM ===
-	//  ====================================
-
-	//Instantiate the twitter component
-	var t = new twitter(config.twitter);
-
-	var currentState = {
+	state : {
 		totalTweets : 0
-	}
-	var tags = []; //used to hold the tags we'll be watching
-	var tracker;
+	},
 
-	function getTagsFromTrackingObject () {
-		//loop through each category of tracker
-		_.each(tracker, function (val, symbol) {
 
-			//loop through the array of tags and push them onto the tags array if they aren't already there
-			_.each(val.hashtags, function (val, hashtagName) {
-				pushToTagArray(val, hashtagName);
-			});
-		});
+	/*
+	 * Initalises our twitter link
+	 * Stores our socketServer for use when emitting
+	 * Opens a context for the twitter streaming API and opens a stream to Twitter
+	 */
+	init : function (app, socketServer, config) {
 
-		return tags;
-	}
-	function pushToTagArray (val, tag) {
-		var exists = tags.has(tag);
+		SocketServer = socketServer; //assigning passed instance of our socket connection to use when we need to emit
 
-		//if the value doesn't exist in our array
-		if (!exists) {
-			tags.push(tag);
-		}
-	}
+		//_self.twitterStreamingApi = new twitter(config.twitter); //Instantiate the twitterStreamingAPI component
 
-	/////////////TWITTER STREAMING STUFF
-	t.openStream = function () {
+		return TwitterController;
+
+	},
+
+	/*
+	 * Opens connection to the twitter Streaming API
+	 */
+	openStream : function () {
 		console.log('twitter.js: Opening Stream');
+
 		Symbol.loadAll(function (err, symbols) {
 
 			state.getStates(symbols)
@@ -101,15 +63,42 @@ module.exports = function (app, server, config) {
 			});
 
 		});
-	};
-	t.createStream = function () {
+
+	},
+
+
+	getTagsFromTrackingObject : function () {
+
+		//loop through each category of tracker
+		_.each(tracker, function (val, symbol) {
+
+			//loop through the array of tags and push them onto the tags array if they aren't already there
+			_.each(val.hashtags, function (val, hashtagName) {
+				pushToTagArray(val, hashtagName);
+			});
+		});
+
+		return tags;
+	},
+
+	pushToTagArray : function (val, tag) {
+		var exists = tags.has(tag);
+
+		//if the value doesn't exist in our array
+		if (!exists) {
+			tags.push(tag);
+		}
+	},
+
+
+
+
+	createStream : function () {
 
 		var tweet,
 			tweetText;
 
 		tags = getTagsFromTrackingObject(); //temporary until we store the tags in a separate config area
-
-		//console.log('twitter.js: ', globalState.currentGlobalState);
 
 		console.log('twitter.js: Watching tags: ', tags);
 
@@ -157,11 +146,12 @@ module.exports = function (app, server, config) {
 		}, 500);
 
 		//t.setupStateSaver();
-	};
+	},
+
 
 	//this function is called any time we receive some data from the twitter stream
 	//we go through the tags, work out which one was mentioned, and then update our tracker
-	t.dataReceived = function (data) {
+	dataReceived : function (data) {
 		//console.log('twitter.js: receiving');
 
 		//Since twitter doesnt know why the tweet was forwarded we have to search through the text
@@ -183,9 +173,9 @@ module.exports = function (app, server, config) {
 
 			t.matchTweetToHashtags(tweetText);
 		}
-	};
+	},
 
-	t.matchTweetToHashtags = function () {
+	matchTweetToHashtags : function () {
 
 		var validTweet = false;
 
@@ -214,11 +204,10 @@ module.exports = function (app, server, config) {
 		}
 		//t.emitReadableState();
 
-	}
-
+	},
 
 	//update the symbols counts
-	t.updateSymbol = function (symbol, hashtag) {
+	updateSymbol : function (symbol, hashtag) {
 
 		var symbolValues = symbol.hashtags[hashtag];
 
@@ -228,37 +217,40 @@ module.exports = function (app, server, config) {
 		//increment the symbols total votes
 		symbol.total++;
 
-	};
+	},
 
 	//we want to convert out state to an easier to read format for the javascript on the other side
-	t.emitReadableState = function () {
+	emitReadableState : function () {
 		//emit our tweet
 		socketServer.sockets.emit('tweet', globalState.currentGlobalState);
-	};
+	},
 
 	//updates the states in the DB every x seconds
-	t.setupStateSaver = function () {
+	setupStateSaver : function () {
 		//set to update every 10 seconds
 		setInterval(function () {
-			t.saveState(function (msg) {
+			_self.saveState(function (msg) {
 				console.log(msg);
 			});
 		}, 10000);
-	};
+	},
 
-	t.saveState = function (cb) {
+	saveState : function (cb) {
 		//state.updateAllStates(globalState.currentGlobalState, cb);
-	};
+	}
 
-	return t;
 
 };
 
-
-
-
-
 Array.prototype.has = function (value) {
 	return this.indexOf(value) > -1;
-}
+};
+
+
+var _self = TwitterController;
+
+module.exports = TwitterController;
+
+
+
 
