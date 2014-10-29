@@ -1,18 +1,51 @@
 {
-	"christmas" : {
-		"tags" : ["christmas, xmas"]
+	"advent" : {
+		"tags" : ["advent"]
 	},
-	"santa" : {
-		"tags" : ["santa"]
+	"angel" : {
+		"tags" : ["angel", "angels"]
+	},
+	"bells" : {
+		"tags" : ["bell", "bells"]
+	},
+	"blitzen" : {
+		"tags" : ["blitzen"]
+	},
+	"bauble" : {
+		"tags" : ["bauble", "baubles"]
+	},
+	"candle" : {
+		"tags" : ["candle", "candles"]
+	},
+	"carols" : {
+		"tags" : ["carols"]
+	},
+	"christ" : {
+		"tags" : ["christ"]
+	},
+	"christianity" : {
+		"tags" : ["christianity"]
+	},
+	"christmas" : {
+		"tags" : ["christmas", "xmas"]
 	},
 	"crackers" : {
 		"tags" : ["crackers"]
 	},
-	"snowman" : {
-		"tags" : ["snowman"]
+	"elf" : {
+		"tags" : ["elf", "elves"]
+	},
+	"festive" : {
+		"tags" : ["festive"]
 	},
 	"present" : {
 		"tags" : ["present", "gift"]
+	},
+	"santa" : {
+		"tags" : ["santa"]
+	},
+	"snowman" : {
+		"tags" : ["snowman"]
 	},
 	"tree" : {
 		"tags" : ["tree"]

@@ -10,7 +10,10 @@ var mongoose = require('mongoose'),
 
 
 
-var HashtagSchema = new Schema({
+
+//Tag schema is made up f the tagname, and an array of mentions
+//each object in the array of mentions
+var Tag = new Schema({
 	tagname	: String
 });
 
@@ -18,12 +21,11 @@ var HashtagSchema = new Schema({
  * Symbol Schema
  */
 
-var SymbolSchema = new Schema({
-	name				:	{	type : String, unique: true },
-	createdOn			:	{	type : Date, default : Date.now				},
-	lastUpdated			:	{	type : Date, default : Date.now				},
+var Symbol = new Schema({
+	name				:	{ type : String, unique: true },
+	lastUpdated			:	{ type : Date, default : Date.now },
 
-	hashtags			:  [HashtagSchema]
+	tags			:  [Tag]
 });
 
 
@@ -32,7 +34,7 @@ var SymbolSchema = new Schema({
  * Methods
  */
 
-SymbolSchema.methods = {
+Symbol.methods = {
 
 };
 
@@ -42,7 +44,7 @@ SymbolSchema.methods = {
  * Statics
  */
 
-SymbolSchema.statics = {
+Symbol.statics = {
 
   /**
    * Find symbol by name
@@ -74,9 +76,9 @@ SymbolSchema.statics = {
 	},
 
 
-	removeHashtag: function (symbol, name) {
+	removeTag: function (symbol, name) {
 
-		console.log('removing hashtag' + name)
+		console.log('removing tag' + name)
 
 	},
 
@@ -91,19 +93,19 @@ SymbolSchema.statics = {
 
 		var tags = [];
 
-		this.find({}, { hashtags: 1 }, function (err, symbols) {
+		this.find({}, { tags: 1 }, function (err, symbols) {
 
 			if (err) return handleError(err);
 
 			symbols.forEach(function (q) {
 
-				for (var i = 0; i < q.hashtags.length; i++) {
+				for (var i = 0; i < q.tags.length; i++) {
 
-					var hashtag = q.hashtags[i];
+					var tag = q.tags[i];
 
 					console.log(i);
 
-					this.pushToTagArray(tags, hashtag);
+					this.pushToTagArray(tags, tag);
 				}
 			});
 
@@ -129,4 +131,4 @@ SymbolSchema.statics = {
 
 };
 
-mongoose.model('Symbol', SymbolSchema);
+mongoose.model('Symbol', Symbol);

@@ -7,6 +7,7 @@
 var mongoose = require('mongoose'),
 	twitter = require('twitter'), //ntwitter - allows easy JS access to twitter API's - https://github.com/AvianFlu/ntwitter
 	_ = require('underscore'),
+	fs = require('fs'),
 
 	SocketServer = null,
 	Symbol = mongoose.model('Symbol'),
@@ -15,7 +16,8 @@ var mongoose = require('mongoose'),
 
 	pkg = require('package.json'),
 
-	FAKE_TWITTER_CONNECTION = false,
+	FAKE_TWITTER_CONNECTION = true,
+	SAVE_TWEETS_TO_FILE = false,
 	SERVER_BACKOFF_TIME = 30000,
 
 	_this = this;
@@ -24,6 +26,13 @@ var mongoose = require('mongoose'),
 var TwitterController = {
 
 	twitterStreamingApi : null,
+	tags : null,
+
+	testData : {
+		tweetStream : null,
+		numberOfTweets : null
+	},
+
 
 	state : {
 		totalTweets : 0
@@ -35,11 +44,11 @@ var TwitterController = {
 	 * Stores our socketServer for use when emitting
 	 * Opens a context for the twitter streaming API and opens a stream to Twitter
 	 */
-	init : function (app, socketServer, config) {
+	init : function (socketServer, config) {
 
 		SocketServer = socketServer; //assigning passed instance of our socket connection to use when we need to emit
 
-		//_self.twitterStreamingApi = new twitter(config.twitter); //Instantiate the twitterStreamingAPI component
+		_self.twitterStreamingApi = new twitter(config.twitter); //Instantiate the twitterStreamingAPI component
 
 		return TwitterController;
 
@@ -49,7 +58,7 @@ var TwitterController = {
 	 * Opens connection to the twitter Streaming API
 	 */
 	openStream : function () {
-		console.log('twitter.js: Opening Stream');
+		console.log('\ntwitterAPILink :: openStream');
 
 		Symbol.loadAll(function (err, symbols) {
 
@@ -59,100 +68,103 @@ var TwitterController = {
 			)
 			.then(function (symbolObject) {
 				tracker = symbolObject;
-				t.createStream();
+				console.log('twitterAPILink :: ready to create stream\n');
+				console.log(symbolObject);
+
+				_self.tags = state.getTags(symbols);
+
+				_self.createStream();
 			});
 
 		});
 
 	},
-
-
-	getTagsFromTrackingObject : function () {
-
-		//loop through each category of tracker
-		_.each(tracker, function (val, symbol) {
-
-			//loop through the array of tags and push them onto the tags array if they aren't already there
-			_.each(val.hashtags, function (val, hashtagName) {
-				pushToTagArray(val, hashtagName);
-			});
-		});
-
-		return tags;
-	},
-
-	pushToTagArray : function (val, tag) {
-		var exists = tags.has(tag);
-
-		//if the value doesn't exist in our array
-		if (!exists) {
-			tags.push(tag);
-		}
-	},
-
-
 
 
 	createStream : function () {
 
-		var tweet,
-			tweetText;
+		// if we’re in 'dev' mode, we’ll fake the tweets coming in
+		// This is done using a json file we’ve populated with a load of tweets and we’ll randomly choose them at regular intervals
+		// to simulate the connection to twitter
+		//
+		// This is to stop us getting blocked by Twitter when we’re changing our node server during development
+		if (FAKE_TWITTER_CONNECTION) {
 
-		tags = getTagsFromTrackingObject(); //temporary until we store the tags in a separate config area
+			fs.readFile('core/server/test/tweets.json', function (err, data) {
+				if (err) throw err;
+				//no error = found json object
 
-		console.log('twitter.js: Watching tags: ', tags);
 
-		//Tell the twitter API to filter on the watchSymbols
-		// t.stream('statuses/filter', { track: tags }, function(stream) {
+				_self.testData.tweetStream = JSON.parse(data);
+				_self.testData.numberOfTweets = _self.testData.tweetStream.length;
 
-		// 	//We have a connection. Now watch the 'data' event for incomming tweets.
-		// 	stream.on('data', t.dataReceived);
-		// 	//catch any errors from the streaming API
-		// 	stream.on('error', function(error) {
-		// 		console.log("twitter.js: My error: ", error);
-
-		// 		//try reconnecting to twitter in 30 seconds
-		// 		// setTimeout(function () {
-		// 		// 	t.openStream();
-		// 		// }, 30000);
-
-		// 	});
-		// 	stream.on('end', function (response) {
-		// 		// Handle a disconnection
-		// 		console.log("twitter.js: Disconnection: ", response.statusCode);
-
-		// 		//try reconnecting to twitter in 30 seconds
-		// // 		setTimeout(function () {
-		// // 			t.openStream();
-		// // 		}, 30000);
-
-		// 	});
-		// 	stream.on('destroy', function (response) {
-		// 		// Handle a 'silent' disconnection from Twitter, no end/error event fired
-		// 		console.log("twitter.js: Destroyed: ", response);
-
-		// 		//try reconnecting to twitter in 30 seconds
-		// // 		setTimeout(function () {
-		// // 			t.openStream();
-		// // 		}, 30000);
-		// 	});
-		// });
-
-		//dev only
-		setInterval(function () {
-			t.dataReceived({
-				text : '@dishmx #elfutbolesdetodos #mex 6 #bra 5'
+				// pick a random tweet every 5 milliseconds
+				setInterval(_self.receiveTestTweet, 100);
 			});
-		}, 500);
 
-		//t.setupStateSaver();
+		} else {
+
+			var tweet,
+				tweetText;
+
+			//Tell the twitter API to filter on the watchSymbols
+			_self.twitterStreamingApi.stream('statuses/filter', { track: _self.tags }, function(stream) {
+
+				//We have a connection. Now watch the 'data' event for incomming tweets.
+				stream.on('data', _self.dataReceived);
+
+				//catch any errors from the streaming API
+				stream.on('error', function(error) {
+					console.log("twitterAPILink :: My error: ", error);
+
+					//try reconnecting to twitter in 30 seconds
+					// setTimeout(function () {
+					// 	t.openStream();
+					// }, 30000);
+
+				});
+				stream.on('end', function (response) {
+					// Handle a disconnection
+					console.log("twitterAPILink :: Disconnection: ", response.statusCode);
+
+					//try reconnecting to twitter in 30 seconds
+			// 		setTimeout(function () {
+			// 			t.openStream();
+			// 		}, 30000);
+
+				});
+				stream.on('destroy', function (response) {
+					// Handle a 'silent' disconnection from Twitter, no end/error event fired
+					console.log("twitterAPILink :: Destroyed: ", response);
+
+					//try reconnecting to twitter in 30 seconds
+			// 		setTimeout(function () {
+			// 			t.openStream();
+			// 		}, 30000);
+				});
+			});
+
+			// t.setupStateSaver();
+
+		}
+	},
+
+	receiveTestTweet : function () {
+
+		var randomInt = Math.floor(Math.random() * _self.testData.numberOfTweets);
+
+		var randomTweet = _self.testData.tweetStream[randomInt];
+
+		//send tweet to our data received function
+		_self.dataReceived(randomTweet);
+
 	},
 
 
 	//this function is called any time we receive some data from the twitter stream
 	//we go through the tags, work out which one was mentioned, and then update our tracker
 	dataReceived : function (data) {
-		//console.log('twitter.js: receiving');
+		//console.log('twitterAPILink :: dataReceived');
 
 		//Since twitter doesnt know why the tweet was forwarded we have to search through the text
 		//and determine which hashtag it was meant for. Sometimes we can't tell, in which case we don't
@@ -161,55 +173,69 @@ var TwitterController = {
 		//Make sure it was a valid tweet
 		if (data.text !== undefined) {
 
-			//We're gunna do some indexOf comparisons and we want it to be case agnostic, whatever that means
+			// first check if we’re saving tweets down for test data
+			// if true, save to our test JSON file
+			if (SAVE_TWEETS_TO_FILE) {
+				_self.saveTweetToFile(data);
+			}
+
+			//Build up a smaller element of data that we want to use from the mammoth tweet data we receive
 			tweet = {
 				symbol: null,
 				time: null,
-				text: data.text,
-				country: ''
-			},
-			tweetText = data.text.toLowerCase();
-			//console.log(tweetText);
+				textRaw: data.text,
+				country: '',
+				text: data.text.toLowerCase()
+			};
 
-			t.matchTweetToHashtags(tweetText);
+			_self.matchTweetToTags(tweet);
 		}
 	},
 
-	matchTweetToHashtags : function () {
+	saveTweetToFile : function (tweet) {
+
+		fs.appendFile('core/server/test/tweets.json', JSON.stringify(tweet) + ',', function (err) {
+			if (err) throw err;
+			//no error = saved
+		});
+
+	},
+
+	matchTweetToTags : function (tweet) {
 
 		var validTweet = false;
 
-		//Go through each tracker objects set of hashtags and check if it was mentioned. If so, increment the hashtag counter, the total objects counter and
+		//Go through each tracker objects set of tags and check if it was mentioned. If so, increment the hashtag counter, the total objects counter and
 		//set the 'claimed' variable to true to indicate something was mentioned so we can increment
 		//the 'totalTweets' counter in our state
 		_.each(tracker, function(symbol) {
 
-			//for each symbol, we could be monitoring multiple hashtags, so loop through these also
-			_.each(symbol.hashtags, function(value, hashtag) {
+			//for each symbol, we could be monitoring multiple tags, so loop through these also
+			_.each(symbol.tags, function(value, tag) {
 
-				if ((tweetText.toLowerCase()).indexOf(hashtag.toLowerCase()) !== -1) {
+				if (tweet.text.indexOf(tag.toLowerCase()) !== -1) {
 
-					t.updateSymbol(symbol, hashtag);
+					_self.updateSymbol(symbol, tag);
 
 					validTweet = true;
 
-					//console.log(symbol);
+					console.log(symbol);
 				}
 			});
 		});
 
 		//if the tweet was claimed by at least one symbol
 		if (validTweet) {
-			currentState.totalTweets++;
+			_self.state.total++;
 		}
 		//t.emitReadableState();
 
 	},
 
 	//update the symbols counts
-	updateSymbol : function (symbol, hashtag) {
+	updateSymbol : function (symbol, tag) {
 
-		var symbolValues = symbol.hashtags[hashtag];
+		var symbolValues = symbol.tags[tag];
 
 		//increment the hashtag total for the symbol
 		symbolValues.count++;

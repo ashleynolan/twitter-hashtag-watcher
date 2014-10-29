@@ -6,10 +6,10 @@
 var mongoose = require('mongoose')
 	, Promise = require('es6-promise').Promise
 
-	, setup = require('../../app/controllers/setupController')
+	//, setup = require('core/server/controllers/setupController')
 	, Symbol = mongoose.model('Symbol')
 	, State = mongoose.model('State')
-	, utils = require('../../lib/utils')
+	, utils = require('lib/utils')
 	, _ = require('underscore'),
 	_this = this;
 
@@ -39,11 +39,14 @@ exports.load = function (req, res, next, id) {
 
 exports.create = function (symbolName, value) {
 
-
 	return new Promise(function (resolve, reject) {
+
+		//console.log('server/controllers/symbol :: create');
 
 		//first we need to check if the symbol already exists in the DB - we don't want duplicates
 		Symbol.load(symbolName, function (err, symbol) {
+
+			//console.log(value.tags);
 
 			//if we can't find an id of the same name, it's not in the DB so add it
 			if (!symbol) {
@@ -53,15 +56,21 @@ exports.create = function (symbolName, value) {
 				});
 
 				//loop through hashtags and
-				_.each(value.hashtags, function (hashtag) {
-					symbol.hashtags.push({
-						tagname: hashtag
+				_.each(value.tags, function (tag) {
+					symbol.tags.push({
+						tagname: tag
 					});
 				});
 
-				console.log('inside loop')
-				symbol.save(function () {
-					resolve();
+				symbol.save(function (err) {
+					if (err) {
+						console.log('server/controllers/symbol :: error :: ' + err);
+						console.log(symbol);
+						console.log("\n");
+					} else {
+						console.log('server/controllers/symbol :: symbol successfully saved to the db');
+						resolve();
+					}
 				});
 			} else {
 				//check we don't need to update it with new potential new values if our symbol has changed
@@ -165,7 +174,7 @@ exports.getAllSymbols = function (req, res) {
 			// });
 			//
 			res.render('layouts/home', {
-				title: 'Realtime World Cup',
+				title: 'Test Title',
 				symbolsJSON: symbols
 			});
 

@@ -4,23 +4,22 @@
  * and handles the db connection
  */
 
-var express = require('express')
-	, mongoose = require('mongoose')
-	, Promise = require('es6-promise').Promise
-	, dbc = require('../app/controllers/dbController')
-	, pkg = require('../package.json')
-	, db;
+var express = require('express'),
+	mongoose = require('mongoose'),
+	Promise = require('es6-promise').Promise,
+	dbc = require('core/db/api'),
+	pkg = require('package.json'),
+	db;
 
+function init (twitter, config) {
 
-
-module.exports = function (app, twitter, config) {
 	mongoose.connect(config.global.db.path);
 
 	db = mongoose.connection;
 	db.on('error', console.error.bind(console, 'connection error:'));
 
 	db.once('open', function callback (db) {
-		// yay!
+
 		console.log('Connnected to DB\n');
 
 		//creates our questions in the db
@@ -38,5 +37,7 @@ module.exports = function (app, twitter, config) {
 	return db;
 
 }
+
+module.exports = init;
 
 

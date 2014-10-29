@@ -36,16 +36,18 @@ function init (app, config) {
 	//  ===============================
 	var socketServer = require('./server/socketServer')(app, server);
 
+
 	//  ================================
 	//  === TWITTER CONTROLLER SETUP ===
 	//  ================================
-	//
 	var twitterController = require('./server/controllers/twitterApiLinkController');
-	twitterController.init(app, socketServer, config);
+	twitterController.init(socketServer, config);
 
-	// //bootstrap the database stuff
-	// //var db = require('./core/db')(app, twitter, config);
 
+	//  ===================
+	//  === INIT THE DB ===
+	//  ===================
+	var db = require('./db')(twitterController, config);
 
 
 	//  ================================

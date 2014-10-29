@@ -28,8 +28,7 @@ console.log('ENVIRONMENT = ' + env); // log out the environment variable to the 
 //  ================================
 var parentApp = express(); //Create an express app
 
-var coreSetup = require('./core')(parentApp, config); //handles the setup of our application
-
+require('./core')(parentApp, config); //handles the setup of our application
 
 // expose app as the scope
 exports = module.exports = parentApp;

@@ -13,7 +13,7 @@ var mongoose = require('mongoose'),
  */
 
 var StateSchema = new Schema({
-	hashtag				:	{	type : Schema.Types.ObjectId, ref : 'Hashtag'	},
+	tag				:	{	type : Schema.Types.ObjectId, ref : 'Tag'	},
 	name				:	String,
 	date				:	{	type : Date, default : Date.now					},
 	count				:	Number
@@ -27,7 +27,7 @@ var StateSchema = new Schema({
 StateSchema.methods = {
 
 
-}
+};
 
 
 
@@ -45,7 +45,7 @@ StateSchema.statics = {
 	* @api private
 	*/
 
-	load: function (hashtag, dateRange, cb) {
+	load: function (tag, dateRange, cb) {
 
 		if (dateRange === 'today') {
 			var now = new Date(),
@@ -53,7 +53,7 @@ StateSchema.statics = {
 
 
 			this.findOne({
-				hashtag : hashtag,
+				tag : tag,
 				date: today
 			})
 				.exec(cb);

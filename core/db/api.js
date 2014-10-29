@@ -3,12 +3,12 @@
 var mongoose = require('mongoose'),
 	Promise = require('es6-promise').Promise,
 
-	symbol = require('../../app/controllers/symbolController'),
-	state = require('../../app/controllers/stateController'),
+	symbol = require('core/server/controllers/symbolController'),
+	state = require('core/server/controllers/stateController'),
 
 	Symbol = mongoose.model('Symbol'),
 	State = mongoose.model('State'),
-	utils = require('../../lib/utils'),
+	utils = require('lib/utils'),
 	_ = require('underscore'),
 
 	_this = this;
@@ -27,13 +27,15 @@ exports.createSymbols = function(twitter) {
 
 	return new Promise(function (resolve, reject) {
 
-		_this.getJSON('../../core/tagDefinition').then(function (response) {
+		console.log('db/api :: createSymbols');
+
+		_this.getJSON('core/tagDefinition').then(function (tagObj) {
 
 			//create an array of promises for our symbols
 			var symbolPromises = [];
 
 			//loop through the JSON array and create each symbol
-			_.each(response, function (symbolJSON, i) {
+			_.each(tagObj, function (symbolJSON, i) {
 				symbolPromises.push(symbol.create(i, symbolJSON));
 			});
 
@@ -57,15 +59,15 @@ exports.createStates = function () {
 
 	return new Promise(function (resolve, reject) {
 
-		console.log('setupController: createStates: Creating States');
+		console.log('\ndb/api :: createStates');
 
 		//first get all the questions
 		Symbol.loadAll(function (err, symbols) {
 
 			var symbolsToCheck = [];
 
-			symbols.forEach(function (s) {
-				symbolsToCheck.push(_this.checkState(s));
+			symbols.forEach(function (symbol) {
+				symbolsToCheck.push(_this.checkState(symbol));
 			});
 
 			return Promise.all(
@@ -82,14 +84,14 @@ exports.checkState = function (symbol) {
 
 	return new Promise(function (resolve, reject) {
 
-		var hashtagsToCheck = [];
+		var tagsToCheck = [];
 
-		_.each(symbol.hashtags, function (value, key) {
-			hashtagsToCheck.push(_this.checkHashtagState(value));
+		_.each(symbol.tags, function (value, key) {
+			tagsToCheck.push(_this.checkTagState(value));
 		});
 
 		return Promise.all(
-			hashtagsToCheck
+			tagsToCheck
 		)
 		.then(function () {
 			resolve();
@@ -99,29 +101,29 @@ exports.checkState = function (symbol) {
 
 };
 
-exports.checkHashtagState = function (hashtag) {
+exports.checkTagState = function (tag) {
 
 	return new Promise(function (resolve, reject) {
 
-		console.log('setupController: checkState: Checking state for ' + hashtag.tagname);
+		console.log('setupController: checkState: Checking state for ' + tag.tagname + ' – ' + tag._id);
 
-		State.load(hashtag._id, 'today', function (err, currentState) {
+		State.load(tag._id, 'today', function (err, currentState) {
 
 			//if we can find state, great
 			if (currentState) {
-				console.log('setupController: checkState: State found for ' +  hashtag.tagname);
+				console.log('setupController: checkState: State found for ' +  tag.tagname);
 				resolve();
 
 			//else create a state in the DB and set to zero
 			} else {
-				console.log('setupController: checkState: State not found, so creating state myself', hashtag.tagname);
+				console.log('setupController: checkState: State not found, so creating state myself', tag.tagname);
 
-				state.create(hashtag, function (err) {
+				state.create(tag, function (err) {
 
 					if (err) {
-						console.log('setupController: checkState: ' + err + ': state not saved\n');
+						console.log('setupController: checkState: ' + err + ': state not saved');
 					} else {
-						console.log('setupController: checkState: State saved to collection\n');
+						console.log('setupController: checkState: State saved to collection');
 					}
 					resolve();
 				});

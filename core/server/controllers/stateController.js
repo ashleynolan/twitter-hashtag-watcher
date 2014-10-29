@@ -17,16 +17,16 @@ var mongoose = require('mongoose')
  * Create a question
  */
 
-exports.create = function (hashtag, cb) {
+exports.create = function (tag, cb) {
 
 	var now = new Date(),
 		today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
 	var state = new State({
-		hashtag					:	hashtag._id,
-		name					:	hashtag.tagname,
-		date					:	today,
-		count					:	0
+		tag					:	tag._id,
+		name				:	tag.tagname,
+		date				:	today,
+		count				:	0
 	});
 
 	state.save(cb);
@@ -37,6 +37,8 @@ exports.create = function (hashtag, cb) {
 exports.getStates = function (symbols) {
 
 	return new Promise(function (resolve, reject) {
+
+		console.log('\nserver/controllers/state :: getStates');
 
 		var symbolStates = [];
 
@@ -58,35 +60,53 @@ exports.getSymbolState = function (symbol) {
 
 	return new Promise(function (resolve, reject) {
 
-		var hashtagStates = [];
+		var tagStates = [];
 
 		//and then for each hashtag
-		_.each(symbol.hashtags, function (hashtag, j) {
-			hashtagStates.push(_this.getHashtagState(hashtag));
+		_.each(symbol.tags, function (tag, j) {
+			console.log('server/controllers/state :: getSymbolState :: ' + tag.tagname);
+			tagStates.push(_this.getTagState(tag));
 		});
 
 		return Promise.all(
-			hashtagStates
+			tagStates
 		).then(function () {
 			resolve();
 		});
 	});
 
-}
+};
 
-exports.getHashtagState = function (hashtag) {
+exports.getTagState = function (tag) {
 
 	return new Promise(function (resolve, reject) {
 
-		State.load(hashtag._id, 'today', function (err, currentState) {
+		State.load(tag._id, 'today', function (err, currentState) {
 			//states[key].hashtags[j].state = currentState;
-			hashtag.state = currentState;
-			resolve(hashtag);
+			tag.state = currentState;
+			resolve(tag);
 		});
+	});
+};
 
+
+exports.getTags = function (symbolObj) {
+
+	var tagArray = [];
+
+	_.each(symbolObj, function (symbol) {
+
+		var tags = symbol.tags;
+
+		var numberOfTags = tags.length;
+		for (var i=0; i < numberOfTags; i++) {
+			tagArray.push(tags[i].tagname);
+		}
 	});
 
-}
+	return tagArray;
+
+};
 
 
 /**
@@ -113,16 +133,16 @@ exports.stateArrayToObject = function (states) {
 		_.each(states, function (symbol) {
 
 			stateObject[symbol.name] = {
-				hashtags : {},
+				tags : {},
 				total : 0
 			}
 
-			_.each(symbol.hashtags, function (hashtag) {
-				stateObject[symbol.name].hashtags[hashtag.tagname] = {
-					count : hashtag.state.count
+			_.each(symbol.tags, function (tag) {
+				stateObject[symbol.name].tags[tag.tagname] = {
+					count : tag.state.count
 				}
 
-				stateObject[symbol.name].total += stateObject[symbol.name].hashtags[hashtag.tagname].count;
+				stateObject[symbol.name].total += stateObject[symbol.name].tags[tag.tagname].count;
 			})
 		});
 
