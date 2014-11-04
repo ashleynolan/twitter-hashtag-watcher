@@ -1,10 +1,8 @@
-extends layouts/default
+extends layouts/home
 
 block vars
 	- var page = 'home'
-	- var pageContent = 'It let\'s you have multiple questions and stores data in state each day using MongoDB.'
+	- var subText = 'This is a twitter tag watcher'
+	- var pageContent = 'This is some content which needs to be updated'
 	- var shareText = 'Some share text goes here'
 	- var urlFriendlyShareText = encodeURIComponent(shareText);
-
-block content
-	p Here is some content inserted through a block. It's pretty awesome.

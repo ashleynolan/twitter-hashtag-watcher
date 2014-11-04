@@ -27,6 +27,7 @@
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-autoprefixer": "~1.0.1",
+    "grunt-browserify": "~3.0.1",
     "grunt-contrib-copy": "^0.7.0",
     "grunt-contrib-jshint": "^0.10.0",
     "grunt-contrib-sass": "^0.8.1",
@@ -34,7 +35,11 @@
     "grunt-contrib-watch": "^0.6.1",
     "grunt-csso": "~0.6.3",
     "grunt-devtools": "^0.2.1",
-    "grunt-shimly": "0.0.7"
+    "grunt-newer": "~0.7.0",
+    "grunt-shimly": "0.0.7",
+    "load-grunt-configs": "~0.4.0",
+    "load-grunt-tasks": "~0.6.0",
+    "uglifyify": "~2.5.0"
   },
   "subdomain": "twitter-hashtag-watcher",
   "engines": {

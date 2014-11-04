@@ -6,7 +6,8 @@
 var mongoose = require('mongoose')
 	, Promise = require('es6-promise').Promise
 
-	//, setup = require('core/server/controllers/setupController')
+	, state = require('core/server/controllers/stateController')
+
 	, Symbol = mongoose.model('Symbol')
 	, State = mongoose.model('State')
 	, utils = require('lib/utils')
@@ -132,15 +133,20 @@ exports.display = function(req, res) {
 	console.log('questionController: Displaying page:');
 
 	Symbol.loadAll(function (err, symbols) {
-		state.getStates(symbols, function (symbolArray) {
-			state.stateArrayToObject(symbolArray, function (symbolObject) {
 
-				res.render('layouts/home', {
+		state.getStates(symbols)
+		.then(
+			state.stateArrayToObject
+		)
+		.then(function (symbolObject) {
+
+			console.log(symbolObject);
+
+			res.render('index', {
 				title: 'Tag Watcher',
-				symbolsJSON: symbols
+				json: symbolObject
 			});
 
-			});
 		});
 	});
 
@@ -183,7 +189,4 @@ exports.getAllSymbols = function (req, res) {
 	});
 
 
-}
-
-
-
+};

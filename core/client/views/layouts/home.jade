@@ -1,0 +1,25 @@
+doctype html
+html
+	include ../includes/head
+
+	block vars
+
+	- if (subText === undefined)
+		- subText = 'Oops'
+
+	body
+		div(class="l-container #{page}")
+			include ../includes/header
+
+			.page-content
+				p #{pageContent}
+
+			each symbol, index in json
+				.symbol
+					p.symbol-label #{index} =&nbsp;
+						span.symbol-total #{symbol.total}
+
+
+			include ../includes/footer
+
+	include ../includes/foot

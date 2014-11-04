@@ -30,7 +30,7 @@ exports.create = function (tag, cb) {
 	});
 
 	state.save(cb);
-}
+};
 
 
 

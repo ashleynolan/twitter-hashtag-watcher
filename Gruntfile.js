@@ -28,15 +28,8 @@ module.exports = function (grunt) {
 			js : {
 				distDir  : 'public/js/dist/',   // <%=config.js.distDir%>
 				distFile : 'script.min.js', // <%=config.js.distFile%>
-
-				// <%=config.js.fileList%>
-				fileList : [
-					'public/js/libs/underscore.min.js',
-					'public/js/helpers/log.js', //log helper
-					'public/js/helpers/min.js', //minimal selector code - swap out for jQuery if you want something with more oomph
-
-					'public/js/script.js',
-				]
+				jsDir : 'public/js',     // <%=config.js.jsDir%>
+				srcFile : 'script.js', // <%=config.js.srcFile%>
 			}
 		}
 	};
@@ -53,14 +46,16 @@ module.exports = function (grunt) {
 	// =============
 	// A task for development
 	grunt.registerTask('dev', [
-		'uglify',
+		'shimly',
+		'browserify:dev',
 		'sass:kickoff',
 		'autoprefixer:kickoff'
 	]);
 
 	// A task for deployment
 	grunt.registerTask('deploy', [
-		'uglify',
+		'shimly',
+		'browserify:prod',
 		'sass:kickoff',
 		'autoprefixer:kickoff',
 		'csso'
@@ -68,7 +63,8 @@ module.exports = function (grunt) {
 
 	// Default task
 	grunt.registerTask('default', [
-		'uglify',
+		'shimly',
+		'browserify:prod',
 		'sass:kickoff',
 		'autoprefixer:kickoff'
 	]);

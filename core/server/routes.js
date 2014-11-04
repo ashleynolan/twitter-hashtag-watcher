@@ -5,6 +5,8 @@
 
 var async = require('async');
 
+	symbol = require('./controllers/symbolController');
+
 
 /**
  * Expose routes
@@ -12,11 +14,7 @@ var async = require('async');
 
 module.exports = function (app) {
 
-	app.get('/', function(req, res) {
-        res.render('index', {
-        	title : 'Basic Node Setup example'
-        });
-	});
+	app.get('/', symbol.display);
 
 	// assume "not found" in the error msgs
 	// is a 404. this is somewhat silly, but

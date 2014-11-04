@@ -215,11 +215,15 @@ var TwitterController = {
 
 				if (tweet.text.indexOf(tag.toLowerCase()) !== -1) {
 
+					//////////////////////////
+					//TODO
+					//////////////////////////
+					//need to make sure we differentiate between matches for subsets of words such as christ and christmas
 					_self.updateSymbol(symbol, tag);
 
 					validTweet = true;
 
-					console.log(symbol);
+					//console.log(symbol);
 				}
 			});
 		});
@@ -228,7 +232,8 @@ var TwitterController = {
 		if (validTweet) {
 			_self.state.total++;
 		}
-		//t.emitReadableState();
+
+		//t.emitState();
 
 	},
 
@@ -246,7 +251,7 @@ var TwitterController = {
 	},
 
 	//we want to convert out state to an easier to read format for the javascript on the other side
-	emitReadableState : function () {
+	emitState : function () {
 		//emit our tweet
 		socketServer.sockets.emit('tweet', globalState.currentGlobalState);
 	},
