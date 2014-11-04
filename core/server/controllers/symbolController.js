@@ -143,7 +143,6 @@ exports.display = function(req, res) {
 			console.log(symbolObject);
 
 			res.render('index', {
-				title: 'Tag Watcher',
 				json: symbolObject
 			});
 

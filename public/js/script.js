@@ -12,18 +12,18 @@
 require("./helpers/log");
 require("./helpers/shims");
 
+var Sockets = require('./modules/sockets');
+
+
 //initialise KO object
 var KO = {};
 
 KO.Config = {
-	variableX : '', // please don't keep me - only for example syntax!
 
 	init : function () {
-		console.debug('Kickoff is running');
 
-		// Example module include
-		KO.UI = require('./modules/UI');
-		KO.UI.init();
+		log('running');
+		Sockets.init();
 	}
 };
 

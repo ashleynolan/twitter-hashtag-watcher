@@ -16,7 +16,7 @@ var mongoose = require('mongoose'),
 
 	pkg = require('package.json'),
 
-	FAKE_TWITTER_CONNECTION = true,
+	FAKE_TWITTER_CONNECTION = false,
 	SAVE_TWEETS_TO_FILE = false,
 	SERVER_BACKOFF_TIME = 30000,
 
@@ -35,7 +35,8 @@ var TwitterController = {
 
 
 	state : {
-		totalTweets : 0
+		totalTweets : 0,
+		symbols : null
 	},
 
 
@@ -67,7 +68,7 @@ var TwitterController = {
 				state.stateArrayToObject
 			)
 			.then(function (symbolObject) {
-				tracker = symbolObject;
+				_self.state.symbols = symbolObject;
 				console.log('twitterAPILink :: ready to create stream\n');
 				console.log(symbolObject);
 
@@ -208,7 +209,7 @@ var TwitterController = {
 		//Go through each tracker objects set of tags and check if it was mentioned. If so, increment the hashtag counter, the total objects counter and
 		//set the 'claimed' variable to true to indicate something was mentioned so we can increment
 		//the 'totalTweets' counter in our state
-		_.each(tracker, function(symbol) {
+		_.each(_self.state.symbols, function(symbol) {
 
 			//for each symbol, we could be monitoring multiple tags, so loop through these also
 			_.each(symbol.tags, function(value, tag) {
@@ -233,7 +234,7 @@ var TwitterController = {
 			_self.state.total++;
 		}
 
-		//t.emitState();
+		_self.emitState();
 
 	},
 
@@ -253,7 +254,7 @@ var TwitterController = {
 	//we want to convert out state to an easier to read format for the javascript on the other side
 	emitState : function () {
 		//emit our tweet
-		socketServer.sockets.emit('tweet', globalState.currentGlobalState);
+		SocketServer.sockets.emit('tweet', _self.state.symbols);
 	},
 
 	//updates the states in the DB every x seconds

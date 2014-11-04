@@ -23,7 +23,7 @@ module.exports.tasks = {
 	 */
 	browserify: {
 		dev: {
-			src: ['<%=config.js.srcFile%>'],
+			src: ['<%=config.js.jsDir%>/<%=config.js.srcFile%>'],
 			dest: '<%=config.js.distDir%><%=config.js.distFile%>',
 			options : {
 				browserifyOptions : {

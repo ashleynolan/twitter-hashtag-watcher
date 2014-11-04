@@ -4,10 +4,26 @@
 */
 
 // dependencies for this module go here
-// e.g. var $ = require('traversty')
+var $ = require('traversty'),
+	qwery = require('qwery');
 
-module.exports = {
+//give us old IE selector support (<8)
+$.setSelectorEngine(qwery);
+
+var UI = {
 	init : function () {
 		console.debug('KO.UI module is being initialised');
+	},
+
+
+	updateSymbol : function (name, data) {
+
+		//log(name, data)
+		var symbolTotal = $('.symbol--' + name + ' .symbol-total');
+
+		symbolTotal[0].innerHTML = data.total;
+
 	}
-}
+};
+
+module.exports = UI;

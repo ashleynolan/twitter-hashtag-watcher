@@ -39,6 +39,8 @@
     "grunt-shimly": "0.0.7",
     "load-grunt-configs": "~0.4.0",
     "load-grunt-tasks": "~0.6.0",
+    "qwery": "^3.4.2",
+    "traversty": "^1.0.5",
     "uglifyify": "~2.5.0"
   },
   "subdomain": "twitter-hashtag-watcher",
