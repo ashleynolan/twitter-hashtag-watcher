@@ -31,3 +31,10 @@ body {
 	.page-content {
 		border-bottom: 1px solid #333;
 	}
+
+	.symbol {
+		@include respond-min($bp-mid) {
+			float: left;
+			width: 25%;
+		}
+	}

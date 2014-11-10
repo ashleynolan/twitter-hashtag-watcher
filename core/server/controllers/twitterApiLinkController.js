@@ -19,6 +19,7 @@ var mongoose = require('mongoose'),
 	FAKE_TWITTER_CONNECTION = false,
 	SAVE_TWEETS_TO_FILE = false,
 	SERVER_BACKOFF_TIME = 30000,
+	TEST_TWEET_TIMER = 50,
 
 	_this = this;
 
@@ -100,7 +101,8 @@ var TwitterController = {
 				_self.testData.numberOfTweets = _self.testData.tweetStream.length;
 
 				// pick a random tweet every 5 milliseconds
-				setInterval(_self.receiveTestTweet, 100);
+				console.log( _self.TEST_TWEET_TIMER);
+				setInterval(_self.receiveTestTweet, TEST_TWEET_TIMER);
 			});
 
 		} else {
@@ -214,12 +216,10 @@ var TwitterController = {
 			//for each symbol, we could be monitoring multiple tags, so loop through these also
 			_.each(symbol.tags, function(value, tag) {
 
-				if (tweet.text.indexOf(tag.toLowerCase()) !== -1) {
+				var reg = new RegExp('.*\\b' + tag + '\\b.*')
 
-					//////////////////////////
-					//TODO
-					//////////////////////////
-					//need to make sure we differentiate between matches for subsets of words such as christ and christmas
+				//do a regex match here so that we match the exact tag
+				if (tweet.text.match(reg) !== null) {
 					_self.updateSymbol(symbol, tag);
 
 					validTweet = true;

@@ -26,6 +26,9 @@
 	"christmas" : {
 		"tags" : ["christmas", "xmas", "noel"]
 	},
+	"christmastree" : {
+		"tags" : ["christmas tree"]
+	},
 	"cliffrichard" : {
 		"tags" : ["cliff richard"]
 	},
@@ -217,9 +220,6 @@
 	},
 	"tinsel" : {
 		"tags" : ["tinsel"]
-	},
-	"tree" : {
-		"tags" : ["tree"]
 	},
 	"turkey" : {
 		"tags" : ["turkey"]

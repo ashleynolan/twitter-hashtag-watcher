@@ -2156,6 +2156,13 @@ body {
   border-bottom: 1px solid #333;
 }
 
+@media screen and (min-width: 38.4em) {
+  .symbol {
+    float: left;
+    width: 25%;
+  }
+}
+
 .page-footer {
   position: fixed;
   width: 100%;
