@@ -2156,6 +2156,11 @@ body {
   border-bottom: 1px solid #333;
 }
 
+.symbols {
+  overflow: hidden;
+  padding-bottom: 50px;
+}
+
 @media screen and (min-width: 38.4em) {
   .symbol {
     float: left;

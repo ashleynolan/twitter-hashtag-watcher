@@ -140,7 +140,7 @@ exports.display = function(req, res) {
 		)
 		.then(function (symbolObject) {
 
-			console.log(symbolObject);
+			//console.log(symbolObject);
 
 			res.render('index', {
 				json: symbolObject
@@ -154,38 +154,38 @@ exports.display = function(req, res) {
 
 
 
-exports.getAllSymbols = function (req, res) {
+// exports.getAllSymbols = function (req, res) {
 
-	Symbol.loadAll(function (err, symbols) {
+// 	Symbol.loadAll(function (err, symbols) {
 
-		_.each(symbols, function (key, value) {
+// 		_.each(symbols, function (key, value) {
 
-			console.log(key, value);
+// 			//console.log(key, value);
 
-		});
-		//setup.getState(function (state) {
+// 		});
+// 		//setup.getState(function (state) {
 
-			// console.log(state);
-			//reduce tags into associated array
-			// var tags = _.reduce (state.tags, function (reduced, item) {
-			// 	reduced[item.tag] = item;
-			// 	return reduced;
-			// }, {});
+// 			// console.log(state);
+// 			//reduce tags into associated array
+// 			// var tags = _.reduce (state.tags, function (reduced, item) {
+// 			// 	reduced[item.tag] = item;
+// 			// 	return reduced;
+// 			// }, {});
 
-			// res.render('layouts/symbol', {
-			// 	symbol: symbol,
-			// 	state: state,
-			// 	tags: tags
-			// });
-			//
-			res.render('layouts/home', {
-				title: 'Test Title',
-				symbolsJSON: symbols
-			});
+// 			// res.render('layouts/symbol', {
+// 			// 	symbol: symbol,
+// 			// 	state: state,
+// 			// 	tags: tags
+// 			// });
+// 			//
+// 			res.render('layouts/home', {
+// 				title: 'Test Title',
+// 				symbolsJSON: symbols
+// 			});
 
-		//});
+// 		//});
 
-	});
+// 	});
 
 
-};
+// };

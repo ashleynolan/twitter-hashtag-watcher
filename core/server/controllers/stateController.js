@@ -33,7 +33,7 @@ exports.create = function (tag, cb) {
 };
 
 
-
+//Loops through each symbol and gets the state of each in turn
 exports.getStates = function (symbols) {
 
 	return new Promise(function (resolve, reject) {
@@ -56,6 +56,8 @@ exports.getStates = function (symbols) {
 	});
 }
 
+//gets the state of the symbol passed to the function
+//does this by looping through the tags associated with it and getting their state
 exports.getSymbolState = function (symbol) {
 
 	return new Promise(function (resolve, reject) {
@@ -81,8 +83,9 @@ exports.getTagState = function (tag) {
 
 	return new Promise(function (resolve, reject) {
 
+		//{ tagname: 'yuletide', _id: 5460e183cf25cedd563ff8b5 }
+
 		State.load(tag._id, 'today', function (err, currentState) {
-			//states[key].hashtags[j].state = currentState;
 			tag.state = currentState;
 			resolve(tag);
 		});
@@ -115,8 +118,8 @@ exports.getTags = function (symbolObj) {
 
 	{
 		brazil : {
-			hashtags : {
-				'#BRA' : {
+			tags : {
+				'brazil' : {
 					count: 0
 				}
 			},
@@ -133,12 +136,14 @@ exports.stateArrayToObject = function (states) {
 		_.each(states, function (symbol) {
 
 			stateObject[symbol.name] = {
+				id : symbol._id,
 				tags : {},
 				total : 0
 			}
 
 			_.each(symbol.tags, function (tag) {
 				stateObject[symbol.name].tags[tag.tagname] = {
+					id : tag._id,
 					count : tag.state.count
 				}
 
@@ -153,7 +158,6 @@ exports.stateArrayToObject = function (states) {
 /**
  * Make state a more readable format than how it comes back from the DB
  */
-
 exports.makeStateReadable = function (states) {
 
 	//console.log('stateController: makeStateReadable')
@@ -185,66 +189,72 @@ exports.makeStateReadable = function (states) {
 }
 
 
-exports.updateAllStates = function (globalState, cb) {
+//updates the state of each tag (tags store states not symbols)
+exports.updateAllStates = function (globalState) {
 
-	//console.log('stateController: updateAllStates');
-	var controller = this,
-		stateSavedCounter = 0,
-		stateLength = Object.keys(globalState).length;
+	return new Promise(function (resolve, reject) {
 
-	for (var state in globalState) {
+		console.log('stateController: updateAllStates');
 
-		loadState(globalState[state]);
+		var tagStates = []; //array to store requested promises
 
-	}
+		//loop through each symbol
+		for (var symbol in globalState) {
+			var tags = globalState[symbol].tags;
+			//and then through each tag in that symbol – states are stored on tag ids, not symbols
+			for (tag in tags) {
+				tagStates.push(_this.loadState(tag, tags[tag]));
+			}
+		}
+
+		return Promise.all(
+			tagStates
+		).then(function () {
+			resolve('All states saved');
+		});
+	});
 
 
-	//function created to create a closure around relevantState so we can pass it through once our callback is executed
-	function loadState(relevantQuestion) {
+};
+
+//load the state of the relevant tag
+exports.loadState = function (tagName, tagState) {
+
+	return new Promise(function (resolve, reject) {
+
+		console.log('server/controllers/state :: loadState :: ' + tagName);
+
 		//load the state of the same id
-		State.load(relevantQuestion.question._id, 'today', function (err, currentState) {
+		State.load(tagState.id, 'today', function (err, dbState) {
 
+			//TODO///////////////////////////////////////////
 			//should do something here to handle when the day changes - at the moment it errors out (which is fine) and restarts server, would be better if was more seamless and handled it here
 			if (err === null) {
-				controller.updateState(relevantQuestion, currentState, function() {
-					stateSavedCounter++;
-
-					if (stateSavedCounter === stateLength) {
-						cb('All states saved');
-					}
+				_this.updateState(tagState, dbState, function() {
+					resolve();
 				});
 			}
 
 		});
-	}
+
+	});
 
 
 }
 
-exports.updateState = function (newState, currentState, cb) {
+exports.updateState = function (newState, dbState, cb) {
 
 	//update with the current state with the new state values
 
-	currentState.totalVotes = newState.totalVotes;
-
-	//loop through tags and update
-	for (var i=0; i < currentState.tags.length; i++) {
-		var tagState = currentState.tags[i],
-			tagId = tagState.tag,
-			newTagState = newState.tagsData[tagId];
-
-		//update values
-		tagState.votes = newTagState.votes;
-		tagState.percentage = newTagState.percentage;
-	}
+	dbState.count = newState.count;
 
 	//and then save back to the db
-	currentState.save(
+	dbState.save(
 		function (err, product, numAffected) {
 			if (err !== null) {
 				console.log(err);
 			} else {
-				console.log('Successfully updated DB: ', newState.question.questionURL, newState.totalVotes);
+				//console.log('Successfully updated DB: ');
 			}
 			cb();
 		}

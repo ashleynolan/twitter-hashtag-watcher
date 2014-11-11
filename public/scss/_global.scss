@@ -32,9 +32,13 @@ body {
 		border-bottom: 1px solid #333;
 	}
 
-	.symbol {
-		@include respond-min($bp-mid) {
-			float: left;
-			width: 25%;
-		}
+	.symbols {
+		overflow: hidden;
+		padding-bottom: 50px;
+	}
+		.symbol {
+			@include respond-min($bp-mid) {
+				float: left;
+				width: 25%;
+			}
 	}

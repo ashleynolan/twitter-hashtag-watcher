@@ -2015,6 +2015,11 @@ body {
   border-bottom: 1px solid #333;
 }
 
+.symbols {
+  overflow: hidden;
+  padding-bottom: 50px;
+}
+
 .symbol {
   float: left;
   width: 25%;

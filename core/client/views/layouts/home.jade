@@ -14,10 +14,11 @@ html
 			.page-content
 				p #{pageContent}
 
-			each symbol, index in json
-				div(class="symbol symbol--#{index}")
-					p.symbol-label #{index} =&nbsp;
-						span.symbol-total #{symbol.total}
+			.symbols
+				each symbol, index in json
+					div(class="symbol symbol--#{index}")
+						p.symbol-label #{index} =&nbsp;
+							span.symbol-total #{symbol.total}
 
 
 			include ../includes/footer

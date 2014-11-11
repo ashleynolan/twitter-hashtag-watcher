@@ -16,7 +16,7 @@ var mongoose = require('mongoose'),
 
 	pkg = require('package.json'),
 
-	FAKE_TWITTER_CONNECTION = false,
+	FAKE_TWITTER_CONNECTION = true,
 	SAVE_TWEETS_TO_FILE = false,
 	SERVER_BACKOFF_TIME = 30000,
 	TEST_TWEET_TIMER = 50,
@@ -71,7 +71,6 @@ var TwitterController = {
 			.then(function (symbolObject) {
 				_self.state.symbols = symbolObject;
 				console.log('twitterAPILink :: ready to create stream\n');
-				console.log(symbolObject);
 
 				_self.tags = state.getTags(symbols);
 
@@ -101,7 +100,6 @@ var TwitterController = {
 				_self.testData.numberOfTweets = _self.testData.tweetStream.length;
 
 				// pick a random tweet every 5 milliseconds
-				console.log( _self.TEST_TWEET_TIMER);
 				setInterval(_self.receiveTestTweet, TEST_TWEET_TIMER);
 			});
 
@@ -146,10 +144,8 @@ var TwitterController = {
 			// 		}, 30000);
 				});
 			});
-
-			// t.setupStateSaver();
-
 		}
+		_self.setupStateSaver();
 	},
 
 	receiveTestTweet : function () {
@@ -259,16 +255,18 @@ var TwitterController = {
 
 	//updates the states in the DB every x seconds
 	setupStateSaver : function () {
-		//set to update every 10 seconds
+		//set to update every x seconds (set in constants at the top of this file)
 		setInterval(function () {
-			_self.saveState(function (msg) {
-				console.log(msg);
-			});
-		}, 10000);
+			_self.saveState();
+		}, 5000);
 	},
 
-	saveState : function (cb) {
-		//state.updateAllStates(globalState.currentGlobalState, cb);
+	saveState : function () {
+		//save the state
+		state.updateAllStates(_self.state.symbols)
+		.then(function (msg) {
+			console.log(msg);
+		});
 	}
 
 
