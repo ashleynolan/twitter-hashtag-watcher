@@ -56,7 +56,27 @@ StateSchema.statics = {
 				tag : tag,
 				date: today
 			})
-				.exec(cb);
+			.exec(cb);
+		} else if (dateRange === 'yesterday') {
+			var now = new Date(),
+				yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+
+
+			this.findOne({
+				tag : tag,
+				date: yesterday
+			})
+			.exec(cb);
+		} else {
+			var now = new Date(),
+				tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+
+			this.findOne({
+				tag : tag,
+				date: tomorrow
+			})
+			.exec(cb);
 		}
 
 	},

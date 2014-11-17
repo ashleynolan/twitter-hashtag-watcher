@@ -16,7 +16,7 @@ var mongoose = require('mongoose'),
 
 	pkg = require('package.json'),
 
-	FAKE_TWITTER_CONNECTION = true,
+	FAKE_TWITTER_CONNECTION = false,
 	SAVE_TWEETS_TO_FILE = false,
 	SERVER_BACKOFF_TIME = 30000,
 	TEST_TWEET_TIMER = 50,
@@ -62,27 +62,13 @@ var TwitterController = {
 	openStream : function () {
 		console.log('\ntwitterAPILink :: openStream');
 
-		Symbol.loadAll(function (err, symbols) {
-
-			state.getStates(symbols)
-			.then(
-				state.stateArrayToObject
-			)
-			.then(function (symbolObject) {
-				_self.state.symbols = symbolObject;
-				console.log('twitterAPILink :: ready to create stream\n');
-
-				_self.tags = state.getTags(symbols);
-
-				_self.createStream();
-			});
-
-		});
-
+		_self.getLocalStateFromServer(_self.createStream);
 	},
 
 
 	createStream : function () {
+
+		console.log('twitterAPILink :: createStream\n');
 
 		// if we’re in 'dev' mode, we’ll fake the tweets coming in
 		// This is done using a json file we’ve populated with a load of tweets and we’ll randomly choose them at regular intervals
@@ -119,9 +105,9 @@ var TwitterController = {
 					console.log("twitterAPILink :: My error: ", error);
 
 					//try reconnecting to twitter in 30 seconds
-					// setTimeout(function () {
-					// 	t.openStream();
-					// }, 30000);
+					setTimeout(function () {
+						_self.createStream();
+					}, SERVER_BACKOFF_TIME);
 
 				});
 				stream.on('end', function (response) {
@@ -129,9 +115,9 @@ var TwitterController = {
 					console.log("twitterAPILink :: Disconnection: ", response.statusCode);
 
 					//try reconnecting to twitter in 30 seconds
-			// 		setTimeout(function () {
-			// 			t.openStream();
-			// 		}, 30000);
+					setTimeout(function () {
+						_self.createStream();
+					}, SERVER_BACKOFF_TIME);
 
 				});
 				stream.on('destroy', function (response) {
@@ -139,9 +125,9 @@ var TwitterController = {
 					console.log("twitterAPILink :: Destroyed: ", response);
 
 					//try reconnecting to twitter in 30 seconds
-			// 		setTimeout(function () {
-			// 			t.openStream();
-			// 		}, 30000);
+					setTimeout(function () {
+						_self.createStream();
+					}, SERVER_BACKOFF_TIME);
 				});
 			});
 		}
@@ -262,11 +248,34 @@ var TwitterController = {
 	},
 
 	saveState : function () {
-		//save the state
+		//save our states
 		state.updateAllStates(_self.state.symbols)
 		.then(function (msg) {
-			console.log(msg);
+			console.log('State saved at ' + new Date());
+			//if we get a message to clear our local state, reload the state from the server
+			if (msg === 'Clear local server state') {
+				_self.getLocalStateFromServer();
+			}
 		});
+	},
+
+	getLocalStateFromServer : function (cb) {
+
+		Symbol.loadAll(function (err, symbols) {
+			state.getStates(symbols)
+			.then(
+				state.stateArrayToObject
+			)
+			.then(function (symbolObject) {
+				_self.state.symbols = symbolObject;
+
+				_self.tags = state.getTags(symbols);
+
+				if (cb !== null)
+					cb();
+			});
+		});
+
 	}
 
 

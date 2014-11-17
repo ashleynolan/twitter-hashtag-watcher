@@ -5,6 +5,9 @@
 	"angel" : {
 		"tags" : ["angel", "angels"]
 	},
+	"bandaid" : {
+		"tags" : ["band aid", "bandaid", "#bandaid30"]
+	},
 	"bells" : {
 		"tags" : ["bell", "bells"]
 	},
@@ -79,6 +82,9 @@
 	},
 	"god" : {
 		"tags" : ["god"]
+	},
+	"grinch" : {
+		"tags" : ["grinch"]
 	},
 	"grotto" : {
 		"tags" : ["grotto"]

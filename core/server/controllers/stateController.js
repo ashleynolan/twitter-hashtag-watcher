@@ -3,13 +3,13 @@
  * Module dependencies.
  */
 
-var mongoose = require('mongoose')
-	, Promise = require('es6-promise').Promise
+var mongoose = require('mongoose'),
+	Promise = require('es6-promise').Promise,
 
-	, State = mongoose.model('State')
-	, utils = require('lib/utils')
-	, _ = require('underscore')
-	, _this = this;
+	State = mongoose.model('State'),
+	utils = require('lib/utils'),
+	_ = require('underscore'),
+	_this = this;
 
 
 
@@ -54,7 +54,7 @@ exports.getStates = function (symbols) {
 		});
 
 	});
-}
+};
 
 //gets the state of the symbol passed to the function
 //does this by looping through the tags associated with it and getting their state
@@ -139,21 +139,21 @@ exports.stateArrayToObject = function (states) {
 				id : symbol._id,
 				tags : {},
 				total : 0
-			}
+			};
 
 			_.each(symbol.tags, function (tag) {
 				stateObject[symbol.name].tags[tag.tagname] = {
 					id : tag._id,
 					count : tag.state.count
-				}
+				};
 
 				stateObject[symbol.name].total += stateObject[symbol.name].tags[tag.tagname].count;
-			})
+			});
 		});
 
 		resolve(stateObject);
 	});
-}
+};
 
 /**
  * Make state a more readable format than how it comes back from the DB
@@ -186,7 +186,7 @@ exports.makeStateReadable = function (states) {
 	//state
 	return readableStates;
 
-}
+};
 
 
 //updates the state of each tag (tags store states not symbols)
@@ -194,7 +194,7 @@ exports.updateAllStates = function (globalState) {
 
 	return new Promise(function (resolve, reject) {
 
-		console.log('stateController: updateAllStates');
+		//console.log('stateController: updateAllStates');
 
 		var tagStates = []; //array to store requested promises
 
@@ -209,8 +209,8 @@ exports.updateAllStates = function (globalState) {
 
 		return Promise.all(
 			tagStates
-		).then(function () {
-			resolve('All states saved');
+		).then(function (msg) {
+			resolve(msg[0]);
 		});
 	});
 
@@ -221,34 +221,61 @@ exports.updateAllStates = function (globalState) {
 exports.loadState = function (tagName, tagState) {
 
 	return new Promise(function (resolve, reject) {
-
 		//console.log('server/controllers/state :: loadState :: ' + tagName);
 
 		//load the state of the same id
 		State.load(tagState.id, 'today', function (err, dbState) {
-
-			//TODO///////////////////////////////////////////
-			//should do something here to handle when the day changes - at the moment it errors out (which is fine) and restarts server, would be better if was more seamless and handled it here
 			if (err === null) {
-				_this.updateState(tagState, dbState, function() {
-					resolve();
+				_this.updateState(tagState, dbState, function(msg) {
+					resolve(msg);
+				});
+			}
+		});
+	});
+
+
+};
+
+exports.updateState = function (newState, dbState, cb) {
+
+	//Need to check the dbState
+	//if dbState is null, then it means that we cannot find a state because it’s past 12pm and there is no longer a state available
+	//so save the state for the yesterday as the final update
+	//then create a new state for the new instance of today (as it’s now a new day), and then pass back msg
+	//to our main update saying to clear the local state held by the server back to zero
+	if (dbState === null) {
+
+		//first save the state for yesterday before we switch
+		State.load(newState.id, 'yesterday', function (err, yestState) {
+
+			console.log('stateController :: updateState.js :: yesterday');
+
+			if (err === null) {
+				//update yesterdays final state
+				_this.updateState(newState, yestState, function() {
+					newState.tagname = yestState.name;
+					newState._id = newState.id;
+					//create new state for today
+				 	_this.create(newState, function () {
+				 		cb('Clear local server state');
+				 	});
 				});
 			}
 
 		});
 
-	});
+	} else {
+		//update with the current state with the new state values
+		dbState.count = newState.count;
 
+		//and then save back to the db
+		_this.saveHandler(dbState, cb);
+	}
 
-}
+};
 
-exports.updateState = function (newState, dbState, cb) {
+exports.saveHandler = function (dbState, cb) {
 
-	//update with the current state with the new state values
-
-	dbState.count = newState.count;
-
-	//and then save back to the db
 	dbState.save(
 		function (err, product, numAffected) {
 			if (err !== null) {
@@ -256,10 +283,10 @@ exports.updateState = function (newState, dbState, cb) {
 			} else {
 				//console.log('Successfully updated DB: ');
 			}
-			cb();
+			cb('State saved');
 		}
 	);
 
-}
+};
 
 
