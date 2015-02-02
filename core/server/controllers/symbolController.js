@@ -3,15 +3,16 @@
  * Module dependencies.
  */
 
-var mongoose = require('mongoose')
-	, Promise = require('es6-promise').Promise
+var mongoose = require('mongoose'),
+	Promise = require('es6-promise').Promise,
 
-	, state = require('core/server/controllers/stateController')
+	state = require('core/server/controllers/stateController'),
+	twitter = require('core/server/controllers/twitterApiLinkController'),
 
-	, Symbol = mongoose.model('Symbol')
-	, State = mongoose.model('State')
-	, utils = require('lib/utils')
-	, _ = require('underscore'),
+	Symbol = mongoose.model('Symbol'),
+	State = mongoose.model('State'),
+	utils = require('lib/utils'),
+	_ = require('underscore'),
 	_this = this;
 
 
@@ -47,8 +48,6 @@ exports.create = function (symbolName, value) {
 		//first we need to check if the symbol already exists in the DB - we don't want duplicates
 		Symbol.load(symbolName, function (err, symbol) {
 
-			//console.log(value.tags);
-
 			//if we can't find an id of the same name, it's not in the DB so add it
 			if (!symbol) {
 
@@ -74,14 +73,13 @@ exports.create = function (symbolName, value) {
 					}
 				});
 			} else {
-				//check we don't need to update it with new potential new values if our symbol has changed
-				//_this.update(symbol, value, next)
+				//POTENTIAL TODO FOR FUTURE ITERATIONS
+					//check we don't need to update our symbols with potential new values if our symbol has changed
+					//_this.update(symbol, value, next)
 				console.log('Symbol already exists in collection');
 				resolve();
 			}
-
 		});
-
 	});
 
 };
@@ -122,7 +120,7 @@ exports.update = function (symbol, value, next) {
 		next('Symbol already exists in collection');
 	}
 
-}
+};
 
 /**
  * Display
@@ -132,60 +130,8 @@ exports.display = function(req, res) {
 
 	console.log('questionController: Displaying page:');
 
-	Symbol.loadAll(function (err, symbols) {
-
-		state.getStates(symbols)
-		.then(
-			state.stateArrayToObject
-		)
-		.then(function (symbolObject) {
-
-			//console.log(symbolObject);
-
-			res.render('index', {
-				json: symbolObject
-			});
-
-		});
+	res.render('index', {
+		symbols: twitter.state.symbols
 	});
 
-	//_this.getAllSymbols(req, res);
 };
-
-
-
-// exports.getAllSymbols = function (req, res) {
-
-// 	Symbol.loadAll(function (err, symbols) {
-
-// 		_.each(symbols, function (key, value) {
-
-// 			//console.log(key, value);
-
-// 		});
-// 		//setup.getState(function (state) {
-
-// 			// console.log(state);
-// 			//reduce tags into associated array
-// 			// var tags = _.reduce (state.tags, function (reduced, item) {
-// 			// 	reduced[item.tag] = item;
-// 			// 	return reduced;
-// 			// }, {});
-
-// 			// res.render('layouts/symbol', {
-// 			// 	symbol: symbol,
-// 			// 	state: state,
-// 			// 	tags: tags
-// 			// });
-// 			//
-// 			res.render('layouts/home', {
-// 				title: 'Test Title',
-// 				symbolsJSON: symbols
-// 			});
-
-// 		//});
-
-// 	});
-
-
-// };

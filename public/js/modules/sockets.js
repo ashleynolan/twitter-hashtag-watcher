@@ -18,7 +18,7 @@ var Sockets = {
 
 	makeSocketConnection : function () {
 
-		var connectionURL = window.location.hostname;
+		var connectionURL = window.location.hostname + ':' + window.location.port;
 
 		this.socket = io.connect(connectionURL);
 
@@ -32,12 +32,17 @@ var Sockets = {
 
 		},
 
-		onTweetReceived : function (stateObj) {
+		onTweetReceived : function (symbolObj) {
+
+			// log('on tweet received');
+			UI.updateSymbol(symbolObj.key, symbolObj.symbol);
+
+		},
+
+		onStateReceived : function (stateObj) {
 
 			for (var key in stateObj) {
-
 				UI.updateSymbol(key, stateObj[key]);
-
 			}
 
 		}

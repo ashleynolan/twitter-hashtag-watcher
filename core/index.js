@@ -13,10 +13,10 @@ function init (app, config) {
 	 // ====================
 	 // === MODELS SETUP ===
 	 // ====================
-	var models_path = __dirname + '/db/models'
+	var models_path = __dirname + '/db/models';
 	fs.readdirSync(models_path).forEach(function (file) {
-	  if (~file.indexOf('.js')) require(models_path + '/' + file)
-	})
+	  if (~file.indexOf('.js')) require(models_path + '/' + file);
+	});
 
 
 	//Create the HTTP server with the express app as an argument
@@ -34,7 +34,7 @@ function init (app, config) {
 	//  ===============================
 	//  === SOCKET CONNECTION SETUP ===
 	//  ===============================
-	var socketServer = require('./server/socketServer')(app, server);
+	var socketServer = require('./server/socketServer')(app, server, config);
 
 
 	//  ================================

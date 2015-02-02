@@ -15,7 +15,7 @@ html
 				p #{pageContent}
 
 			.symbols
-				each symbol, index in json
+				each symbol, index in symbols
 					div(class="symbol symbol--#{index}")
 						p.symbol-label #{index} =&nbsp;
 							span.symbol-total #{symbol.total}

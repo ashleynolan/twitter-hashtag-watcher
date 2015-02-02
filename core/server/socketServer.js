@@ -1,11 +1,8 @@
-
-
 var io = require('socket.io'); //socket.io - used for our websocket connection
 
 
-var socketServer = {
-
-	init : function (app, server) {
+var SocketServer = {
+	init : function (app, server, config) {
 
 		//Start a Socket.IO listen
 		var socketServer = io.listen(server);
@@ -31,12 +28,10 @@ var socketServer = {
 			console.log('twitter.js: socketServer has closed');
 		});
 
-
-
 		return socketServer;
-
 	}
+};
 
-}
+var _self = SocketServer;
 
-module.exports = socketServer.init;
+module.exports = SocketServer.init;

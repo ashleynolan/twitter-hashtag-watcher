@@ -6,39 +6,48 @@ var path = require('path'),
 
 var sharedConfig = {
 	root: rootPath,
-	db : {
-		path: 'mongodb://localhost/hashtag-watcher'
+	twitter: {
+		consumer_key: process.env.TWITTER_CONSUMER_KEY,
+		consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+		access_token_key: process.env.TWITTER_ACCESS_TOKEN,
+		access_token_secret: process.env.TWITTER_ACCESS_SECRET
 	}
 };
 
 module.exports = {
 	local: {
 		mode: 'local',
-		port: 3002,
+		port: 3021,
 		app: {
 			name: 'Twitter vote counter - local'
 		},
-		twitter: require('./privconfig-twitter')['local'],
+		db : {
+			path: 'mongodb://localhost/hashtag-watcher'
+		},
 		global: sharedConfig
 	},
 
 	dev: {
 		mode: 'development',
-		port: 3002,
+		port: 3021,
 		app: {
 			name: 'Twitter vote counter - Dev'
 		},
-		twitter: require('./privconfig-twitter')['dev'],
+		db : {
+			path: 'mongodb://localhost/hashtag-watcher'
+		},
 		global: sharedConfig
 	},
 
 	prod: {
 		mode: 'production',
-		port: 3002,
+		port: 3021,
 		app: {
 			name: 'Twitter vote counter - Prod'
 		},
-		twitter: require('./privconfig-twitter')['prod'],
+		db : {
+			path: 'mongodb://localhost/hashtag-watcher'
+		},
 		global: sharedConfig
 
 	},

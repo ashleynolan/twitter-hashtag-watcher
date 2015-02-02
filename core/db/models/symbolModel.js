@@ -49,7 +49,7 @@ Symbol.statics = {
   /**
    * Find symbol by name
    *
-   * @param {ObjectId} id
+   * @param {String} symbolName
    * @param {Function} cb
    * @api private
    */
@@ -68,8 +68,6 @@ Symbol.statics = {
 
 	loadAll: function (cb) {
 
-		// this.find().sort({ 'name': -1 })
-		// 	.exec(cb);
 		this.find().sort({ name : 1})
 			.exec(cb);
 
@@ -78,7 +76,7 @@ Symbol.statics = {
 
 	removeTag: function (symbol, name) {
 
-		console.log('removing tag' + name)
+		console.log('removing tag' + name);
 
 	},
 

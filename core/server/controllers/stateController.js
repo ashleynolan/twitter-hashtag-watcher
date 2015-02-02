@@ -34,17 +34,20 @@ exports.create = function (tag, cb) {
 
 
 //Loops through each symbol and gets the state of each in turn
-exports.getStates = function (symbols) {
+//duration is passed through to the get symbol states method
+//duration takes two values, recent or all
+//recent returns just the most recent states
+//duration returns all states for that symbol
+exports.getStates = function (symbols, duration) {
 
 	return new Promise(function (resolve, reject) {
-
 		console.log('\nserver/controllers/state :: getStates');
 
 		var symbolStates = [];
 
 		//for each symbol
 		_.each(symbols, function (symbol, key) {
-			symbolStates.push(_this.getSymbolState(symbol));
+			symbolStates.push(_this.getSymbolState(symbol, duration));
 		});
 
 		return Promise.all(
@@ -58,7 +61,10 @@ exports.getStates = function (symbols) {
 
 //gets the state of the symbol passed to the function
 //does this by looping through the tags associated with it and getting their state
-exports.getSymbolState = function (symbol) {
+//duration takes two values, recent or all
+//recent returns just the most recent states
+//duration returns all states for that symbol
+exports.getSymbolState = function (symbol, duration) {
 
 	return new Promise(function (resolve, reject) {
 
@@ -66,8 +72,12 @@ exports.getSymbolState = function (symbol) {
 
 		//and then for each hashtag
 		_.each(symbol.tags, function (tag, j) {
-			console.log('server/controllers/state :: getSymbolState :: ' + tag.tagname);
-			tagStates.push(_this.getTagState(tag));
+			//console.log('server/controllers/state :: getSymbolState :: ' + tag.tagname);
+			if (duration === 'recent') {
+				tagStates.push(_this.getTagState(tag));
+			} else if (duration === 'all') {
+				tagStates.push(_this.getAllTagStates(tag));
+			}
 		});
 
 		return Promise.all(
@@ -76,17 +86,29 @@ exports.getSymbolState = function (symbol) {
 			resolve();
 		});
 	});
-
 };
+
 
 exports.getTagState = function (tag) {
 
 	return new Promise(function (resolve, reject) {
-
-		//{ tagname: 'yuletide', _id: 5460e183cf25cedd563ff8b5 }
+		//e.g. { tagname: 'yuletide', _id: 5460e183cf25cedd563ff8b5 }
 
 		State.load(tag._id, 'today', function (err, currentState) {
 			tag.state = currentState;
+			resolve(tag);
+		});
+	});
+};
+
+
+exports.getAllTagStates = function (tag) {
+
+	return new Promise(function (resolve, reject) {
+		//e.g. { tagname: 'yuletide', _id: 5460e183cf25cedd563ff8b5 }
+
+		State.loadAll(tag._id, function (err, allStates) {
+			tag.states = allStates;
 			resolve(tag);
 		});
 	});
@@ -108,7 +130,6 @@ exports.getTags = function (symbolObj) {
 	});
 
 	return tagArray;
-
 };
 
 
@@ -155,45 +176,12 @@ exports.stateArrayToObject = function (states) {
 	});
 };
 
-/**
- * Make state a more readable format than how it comes back from the DB
- */
-exports.makeStateReadable = function (states) {
-
-	//console.log('stateController: makeStateReadable')
-
-	var readableStates = {};
-
-	for (var stateNum in states) {
-
-		var state = states[stateNum],
-			QID = state.question.questionURL;
-
-		readableStates[QID] = {
-			question : states[stateNum].question,
-			tagsData : {},
-			totalVotes : state.totalVotes,
-			date : state.date
-		};
-
-
-		//loop through each tag
-		_.each(state.tags, function (tag, j) {
-			readableStates[QID].tagsData[tag.tag] = tag;
-		});
-	}
-
-	//state
-	return readableStates;
-
-};
 
 
 //updates the state of each tag (tags store states not symbols)
 exports.updateAllStates = function (globalState) {
 
 	return new Promise(function (resolve, reject) {
-
 		//console.log('stateController: updateAllStates');
 
 		var tagStates = []; //array to store requested promises
@@ -253,6 +241,7 @@ exports.updateState = function (newState, dbState, cb) {
 			if (err === null) {
 				//update yesterdays final state
 				_this.updateState(newState, yestState, function() {
+					console.log('stateController :: updateState.js :: updated yesterdays state – creating new state for today');
 					newState.tagname = yestState.name;
 					newState._id = newState.id;
 					//create new state for today
@@ -261,7 +250,6 @@ exports.updateState = function (newState, dbState, cb) {
 				 	});
 				});
 			}
-
 		});
 
 	} else {
@@ -280,9 +268,8 @@ exports.saveHandler = function (dbState, cb) {
 		function (err, product, numAffected) {
 			if (err !== null) {
 				console.log(err);
-			} else {
-				//console.log('Successfully updated DB: ');
 			}
+			//console.log('Successfully updated DB: ');
 			cb('State saved');
 		}
 	);

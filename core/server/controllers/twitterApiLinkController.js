@@ -8,6 +8,7 @@ var mongoose = require('mongoose'),
 	twitter = require('twitter'), //ntwitter - allows easy JS access to twitter API's - https://github.com/AvianFlu/ntwitter
 	_ = require('underscore'),
 	fs = require('fs'),
+	getenv = require('getenv'),
 
 	SocketServer = null,
 	Symbol = mongoose.model('Symbol'),
@@ -16,15 +17,18 @@ var mongoose = require('mongoose'),
 
 	pkg = require('package.json'),
 
-	FAKE_TWITTER_CONNECTION = false,
+	FAKE_TWITTER_CONNECTION = getenv.bool('FAKE_TWITTER_CONNECTION', false),
 	SAVE_TWEETS_TO_FILE = false,
 	SERVER_BACKOFF_TIME = 30000,
-	TEST_TWEET_TIMER = 50,
+	TEST_TWEET_TIMER = 10,
+	STATE_SAVE_DURATION = 600000,
 
 	_this = this;
 
 
 var TwitterController = {
+
+	activeStream : null,
 
 	twitterStreamingApi : null,
 	tags : null,
@@ -34,10 +38,16 @@ var TwitterController = {
 		numberOfTweets : null
 	},
 
+	saveTimer : null,
+	emitLimit : false,
 
 	state : {
 		totalTweets : 0,
 		symbols : null
+	},
+
+	historicState : {
+
 	},
 
 
@@ -50,7 +60,7 @@ var TwitterController = {
 
 		SocketServer = socketServer; //assigning passed instance of our socket connection to use when we need to emit
 
-		_self.twitterStreamingApi = new twitter(config.twitter); //Instantiate the twitterStreamingAPI component
+		_self.twitterStreamingApi = new twitter(config.global.twitter); //Instantiate the twitterStreamingAPI component
 
 		return TwitterController;
 
@@ -63,6 +73,8 @@ var TwitterController = {
 		console.log('\ntwitterAPILink :: openStream');
 
 		_self.getLocalStateFromServer(_self.createStream);
+
+		// _self.getHistoricState();
 	},
 
 
@@ -76,12 +88,12 @@ var TwitterController = {
 		//
 		// This is to stop us getting blocked by Twitter when we’re changing our node server during development
 		if (FAKE_TWITTER_CONNECTION) {
+			console.log('!!!!!!!!!!!FAKE–TWITTER–CONNECTION!!!!!!!!!!');
 
 			fs.readFile('core/server/test/tweets.json', function (err, data) {
 				if (err) throw err;
+
 				//no error = found json object
-
-
 				_self.testData.tweetStream = JSON.parse(data);
 				_self.testData.numberOfTweets = _self.testData.tweetStream.length;
 
@@ -95,43 +107,47 @@ var TwitterController = {
 				tweetText;
 
 			//Tell the twitter API to filter on the watchSymbols
-			_self.twitterStreamingApi.stream('statuses/filter', { track: _self.tags }, function(stream) {
+			_self.twitterStreamingApi.stream('statuses/filter', { track: _self.tags }, _self.onStreamConnect);
 
-				//We have a connection. Now watch the 'data' event for incomming tweets.
-				stream.on('data', _self.dataReceived);
-
-				//catch any errors from the streaming API
-				stream.on('error', function(error) {
-					console.log("twitterAPILink :: My error: ", error);
-
-					//try reconnecting to twitter in 30 seconds
-					setTimeout(function () {
-						_self.createStream();
-					}, SERVER_BACKOFF_TIME);
-
-				});
-				stream.on('end', function (response) {
-					// Handle a disconnection
-					console.log("twitterAPILink :: Disconnection: ", response.statusCode);
-
-					//try reconnecting to twitter in 30 seconds
-					setTimeout(function () {
-						_self.createStream();
-					}, SERVER_BACKOFF_TIME);
-
-				});
-				stream.on('destroy', function (response) {
-					// Handle a 'silent' disconnection from Twitter, no end/error event fired
-					console.log("twitterAPILink :: Destroyed: ", response);
-
-					//try reconnecting to twitter in 30 seconds
-					setTimeout(function () {
-						_self.createStream();
-					}, SERVER_BACKOFF_TIME);
-				});
-			});
 		}
-		_self.setupStateSaver();
+
+		if (_self.saveTimer === null) {
+			_self.setupStateSaver();
+		}
+	},
+
+
+	onStreamConnect : function (stream) {
+
+		_self.activeStream = stream;
+
+		//We have a connection. Now watch the 'data' event for incomming tweets.
+		stream.on('data', _self.dataReceived);
+
+		//catch any errors from the streaming API
+		stream.on('error', _self.onStreamError);
+		stream.on('end', _self.onStreamEnd);
+		stream.on('destroy', _self.onStreamDestroy);
+
+	},
+
+	onStreamError : function (error) {
+		console.log("twitterAPILink :: My error: ", error);
+		setTimeout(_self.createStream, SERVER_BACKOFF_TIME); //try reconnecting to twitter in 30 seconds
+	},
+
+	// Handle a disconnection
+	onStreamEnd : function (response) {
+		console.log("twitterAPILink :: Disconnection: ", response.statusCode);
+		// _self.activeStream.destroy();
+		setTimeout(_self.createStream, 2000); //try reconnecting to twitter in 2 seconds to give db chance to save
+
+	},
+
+	// Handle a 'silent' disconnection from Twitter, no end/error event fired
+	onStreamDestroy : function (response) {
+		console.log("twitterAPILink :: Destroyed: ", response);
+		setTimeout(_self.createStream, SERVER_BACKOFF_TIME); //try reconnecting to twitter in 30 seconds
 	},
 
 	receiveTestTweet : function () {
@@ -179,6 +195,7 @@ var TwitterController = {
 
 	saveTweetToFile : function (tweet) {
 
+		//Remember, that must add [] around JSON once captured to use as test data
 		fs.appendFile('core/server/test/tweets.json', JSON.stringify(tweet) + ',', function (err) {
 			if (err) throw err;
 			//no error = saved
@@ -188,45 +205,46 @@ var TwitterController = {
 
 	matchTweetToTags : function (tweet) {
 
-		var validTweet = false;
+		var validTweet = false,
+			reg,
+			symbol, symbolKey,
+			tag;
 
 		//Go through each tracker objects set of tags and check if it was mentioned. If so, increment the hashtag counter, the total objects counter and
 		//set the 'claimed' variable to true to indicate something was mentioned so we can increment
 		//the 'totalTweets' counter in our state
-		_.each(_self.state.symbols, function(symbol) {
-
+		for (symbolKey in _self.state.symbols) {
+			symbol = _self.state.symbols[symbolKey];
 			//for each symbol, we could be monitoring multiple tags, so loop through these also
-			_.each(symbol.tags, function(value, tag) {
 
-				var reg = new RegExp('.*\\b' + tag + '\\b.*')
+			for (tag in symbol.tags) {
 
-				//do a regex match here so that we match the exact tag
+				reg = new RegExp('.*\\b' + tag.toLowerCase() + '\\b.*');
+
+				// //do a regex match here so that we match the exact tag
 				if (tweet.text.match(reg) !== null) {
 					_self.updateSymbol(symbol, tag);
 
+					_self.emitLimiter({
+						'symbol' : symbol,
+						'key' : symbolKey
+					});
 					validTweet = true;
-
-					//console.log(symbol);
 				}
-			});
-		});
+			}
+		}
 
 		//if the tweet was claimed by at least one symbol
 		if (validTweet) {
 			_self.state.total++;
 		}
-
-		_self.emitState();
-
 	},
 
 	//update the symbols counts
 	updateSymbol : function (symbol, tag) {
 
-		var symbolValues = symbol.tags[tag];
-
-		//increment the hashtag total for the symbol
-		symbolValues.count++;
+		//increment the specific tag total for the symbol
+		symbol.tags[tag].count++;
 
 		//increment the symbols total votes
 		symbol.total++;
@@ -239,22 +257,55 @@ var TwitterController = {
 		SocketServer.sockets.emit('tweet', _self.state.symbols);
 	},
 
+
+	//emit limiter makes sure we don’t hammer our front-end, so we only emit every x ms
+	//then the rest will be updated once the state save every STATE_SAVE_DURATION
+	emitLimiter : function (symbolObj) {
+
+		//if we’ve hit our emit limit, return
+		if (_self.emitLimit === true) {
+			return;
+		}
+
+		_self.emitLimit = true;
+		//emit our tweet to our client FE server
+
+		// SocketServer.client.emit('tweet', symbolObj);
+		SocketServer.sockets.emit('tweet', symbolObj);
+
+		//reset emitLimiter after x ms
+		setTimeout(function () {
+			_self.emitLimit = false;
+		}, 100);
+
+	},
+
+
 	//updates the states in the DB every x seconds
 	setupStateSaver : function () {
 		//set to update every x seconds (set in constants at the top of this file)
-		setInterval(function () {
-			_self.saveState();
-		}, 5000);
+		_self.saveTimer = setInterval(_self.saveState, STATE_SAVE_DURATION);
 	},
 
 	saveState : function () {
+		console.log('Starting Save process at ' + new Date());
+
+		//first destroy our stream – so we aren’t competing for CPU while saving state
+		_self.activeStream.destroy();
+
 		//save our states
 		state.updateAllStates(_self.state.symbols)
 		.then(function (msg) {
 			console.log('State saved at ' + new Date());
+			console.log(msg);
+
 			//if we get a message to clear our local state, reload the state from the server
 			if (msg === 'Clear local server state') {
-				_self.getLocalStateFromServer();
+				console.log('Clearing local state – switching to new day');
+				_self.getLocalStateFromServer(_self.createStream);
+			} else {
+				SocketServer.sockets.emit('symbolState', _self.state); //emit new state for our front end to save in state
+				// SocketServer.client.emit('symbolState', _self.state);
 			}
 		});
 	},
@@ -262,7 +313,7 @@ var TwitterController = {
 	getLocalStateFromServer : function (cb) {
 
 		Symbol.loadAll(function (err, symbols) {
-			state.getStates(symbols)
+			state.getStates(symbols, 'recent')
 			.then(
 				state.stateArrayToObject
 			)
@@ -276,6 +327,28 @@ var TwitterController = {
 			});
 		});
 
+	},
+
+	//at later date, should move this inline with the normal state function and merge the two functions
+	// doesn’t make sense to keep separate as doing some of the same things twice
+	getHistoricState : function () {
+
+		console.log('GETTING HISTORIC STATE!');
+
+		//load all of our symbols
+		//
+		//then we need to get historical state for each one – needs new function to get all related states for each function
+		//
+		//then convert into an object we can understand
+
+		Symbol.loadAll(function (err, symbols) {
+			if (err) console.log(err);
+
+			state.getStates(symbols, 'all')
+			.then(
+				state.stateArrayToObject
+			);
+		});
 	}
 
 

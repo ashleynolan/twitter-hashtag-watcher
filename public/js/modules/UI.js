@@ -18,12 +18,22 @@ var UI = {
 
 	updateSymbol : function (name, data) {
 
-		//log(name, data)
+		// log(name, data);
 		var symbolTotal = $('.symbol--' + name + ' .symbol-total');
 
-		symbolTotal[0].innerHTML = data.total;
+		if (symbolTotal.length > 0) {
+			var index = 0,
+				symLength = symbolTotal.length;
 
-	}
+			for (index; index < symLength; index++) {
+				symbolTotal[index].innerHTML = this.numberWithCommas(data.total);
+			}
+		}
+	},
+
+	numberWithCommas : function(x) {
+		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	},
 };
 
 module.exports = UI;

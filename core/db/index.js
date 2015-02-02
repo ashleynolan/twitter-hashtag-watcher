@@ -13,7 +13,7 @@ var express = require('express'),
 
 function init (twitter, config) {
 
-	mongoose.connect(config.global.db.path);
+	mongoose.connect(config.db.path);
 
 	db = mongoose.connection;
 	db.on('error', console.error.bind(console, 'connection error:'));
